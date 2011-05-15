@@ -1,0 +1,16 @@
+<?php echo $this->doctype()."\n"; ?>
+<html>
+<head>
+<?php echo $this->headMeta()->setIndent(4)."\n"; ?>
+<?php echo $this->headTitle()->setSeparator(' :: ')->setIndent(4)."\n"; ?>
+<?php echo $this->headLink()->appendStylesheet('/css/site.css', 'all')->setIndent(4)."\n"; ?>
+<?php echo $this->headScript()->setIndent(4)."\n"; ?>
+</head>
+<body>
+
+<?php echo $this->layout()->content; ?>
+
+<?php echo $this->inlineScript()."\n"; ?>
+
+</body>
+</html>
