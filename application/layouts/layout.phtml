@@ -1,16 +1,58 @@
-<?php echo $this->doctype()."\n"; ?>
-<html>
+<!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
 <head>
-<?php echo $this->headMeta()->setIndent(4)."\n"; ?>
-<?php echo $this->headTitle()->setSeparator(' :: ')->setIndent(4)."\n"; ?>
-<?php echo $this->headLink()->appendStylesheet('/css/site.css', 'all')->setIndent(4)."\n"; ?>
-<?php echo $this->headScript()->setIndent(4)."\n"; ?>
+<?php echo $this->headMeta()->setIndent(2) . "\n"; ?>
+<?php $this->headTitle(\Zend_Registry::get('siteName'), \Zend_View_Helper_Placeholder_Container_Abstract::SET)->setSeparator(' :: ')->setIndent(2); ?>
+<?php echo $this->headTitle(strip_tags($this->pageTitle())) . "\n"; ?>
+<?php $this->jquery(); ?>
+<?php /*$theme = \Zend_Registry::get('theme');*/ ?>
+<?php echo $this->headLink()
+  ->appendStylesheet('/css/zyndax.YYYYMMDD.css', 'all')
+  #->appendStylesheet($theme['publicPath'] . '/style.YYYYMMDD.css', 'all')
+  #->appendStylesheet($theme['publicPath'] . '/overrides.YYYYMMDD.css', 'all')
+  ->setIndent(2) . "\n"; ?>
+<?php echo $this->headScript()->setIndent(2) . "\n"; ?>
 </head>
-<body>
+<body class="<?php echo $this->bodyClass(); ?>">
+  <!-- Prompt IE 6 users to install Chrome Frame. Remove this if you support IE 6. chromium.org/developers/how-tos/chrome-frame-getting-started -->
+  <!--[if lt IE 7]><p class="chromeframe">Your browser does not adhere to web standards. For a better experience, please <a href="http://browsehappy.com/">upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install the Google Chrome Frame</a> add-on.</p><![endif]-->
 
-<?php echo $this->layout()->content; ?>
+  <header>
+    <div id="header-content">
+<?php if(\Zend_Controller_Front::getInstance()->getRouter()->getCurrentRouteName() !== 'login'): ?>
+      <div id="welcome">
+        <div class="user"><?php echo $this->userLogin() ?></div>
+      </div>
+<?php endif ?>
+      <div id="site-logo">
+        <a href="<?php echo $this->url(array(), 'home') ?>" title="Home"><img src="/images/logo.png" alt="<?php echo Zend_Registry::get('siteName') ?>" width="286" height="77" /></a>
+      </div>
 
-<?php echo $this->inlineScript()."\n"; ?>
+      <?php echo $this->navbar(); ?>
+    </div>
+  </header>
+
+  <div id="main" role="main">
+    <div id="precontent">
+      <h1><?php echo $this->pageTitle() ?></h1>
+      <?php echo $this->contextualLinks() ?>
+    </div>
+    <div id="content">
+      <?php echo $this->messages()->render(); ?>
+      <?php echo $this->layout()->content; ?>
+    </div>
+  </div>
+
+  <footer>
+    <p class="copyright">Copyright &copy; 2011<?php $y = date('Y'); if($y > 2011) { echo '&ndash;' . $y; } ?> <a href="http://example.com/">My Site</a>. All rights reserved. <a href="http://example.com/privacy.html">Privacy Policy</a></p>
+    <p class="zyndax-version">Zyndax v<?php echo Zend_Registry::get('version') ?> build <?php echo Zend_Registry::get('build') ?></p>
+  </footer>
+
+<?php echo $this->inlineScript() . "\n"; ?>
+<?php echo $this->jquery() . "\n"; ?>
 
 </body>
 </html>

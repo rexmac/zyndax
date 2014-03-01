@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Zyndax" basedir="." default="help">
+
+  <!-- Echo project help -->
+  <target name="help" description="This help page">
+    <exec command="phing -projecthelp" passthru="true" />
+  </target>
+
+  <!-- Custom cssmin task -->
+  <taskdef name="cssMin" classname="phing.tasks.ext.cssmin.CssMinTask" />
+
+  <!-- Custom jshint task -->
+  <taskdef name="jshint" classname="phing.tasks.ext.JsHintTask" />
+
+  <!-- Properties -->
+  <property name="project.builddir" value="${project.basedir}/build" />
+  <property name="project.datadir" value="${project.basedir}/data" />
+  <property name="project.distdir" value="${project.basedir}/dist" />
+  <property name="project.docsdir" value="${project.basedir}/docs" />
+  <property name="project.vendordir" value="${project.basedir}/vendor" />
+  <property file="${project.builddir}/build.properties" />
+  <property environment="env" />
+  <tstamp>
+    <format property="TSTAMP" pattern="%s" />
+  </tstamp>
+  <exec command="sed -n 's/.\+VERSION = '\''\([0-9]\+\.[0-9]\+\.[0-9]\+\).\+/\1/p' ${project.basedir}/library/Rexmac/Zyndax/Version/Version.php" outputProperty="version" />
+
+  <!-- Must find verion number property to continue -->
+  <fail unless="version" message="Failed to find version number!" />
+
+  <!-- application folder source files -->
+  <fileset id="application-sources" dir="${project.basedir}/application">
+    <include name="**/**" />
+    <exclude name="configs/application.ini" />
+    <exclude name="configs/redir.ini" />
+  </fileset>
+
+  <!-- bin folder source files -->
+  <fileset id="bin-scripts" dir="${project.basedir}/bin">
+    <include name="_bootstrap.php" />
+    <include name="composer" />
+  </fileset>
+
+  <!-- doc files -->
+  <fileset id="docs" dir="${project.basedir}/">
+    <include name="apache.shared.conf" />
+    <include name="composer.json" />
+    <include name="composer.lock" />
+    <include name="INSTALL" />
+    <include name="README*" />
+  </fileset>
+
+  <!-- library folder source files -->
+  <fileset id="library-sources" dir="${project.basedir}/library">
+    <include name="Rexmac/**" />
+  </fileset>
+
+  <!-- css sources -->
+  <filelist id="css-sources" dir="${project.basedir}/public/css" listfile="${project.builddir}/build.css-sources" />
+
+  <!-- css minified sources -->
+  <filelist id="css-minified-sources" dir="${project.basedir}/public/css/min" listfile="${project.builddir}/build.css-sources" />
+
+  <!-- css cache busting filenames -->
+  <fileset id="css-cachebusters" dir="${project.builddir}/zyndax">
+    <include name="application/modules/admin/layouts/layout.phtml" />
+    <include name="application/modules/admin/layouts/popup.phtml" />
+    <include name="application/modules/admin/layouts/preview.phtml" />
+    <include name="application/layouts/layout.phtml" />
+    <include name="application/layouts/preview.phtml" />
+  </fileset>
+
+  <!-- javascript sources -->
+  <filelist id="js-sources" dir="${project.basedir}/public/js/libs" listfile="${project.builddir}/build.js-sources" />
+
+  <!-- javascript minified sources -->
+  <filelist id="js-minified-sources" dir="${project.basedir}/public/js/libs/min" listfile="${project.builddir}/build.js-sources" />
+
+  <!-- javascript cache busting filenames -->
+  <fileset id="js-cachebusters" dir="${project.builddir}/zyndax">
+    <include name="library/Rexmac/Zyndax/View/Helper/Jquery.php" />
+  </fileset>
+
+  <!-- data folder source files -->
+  <fileset id="data-sources" dir="${project.basedir}/data">
+    <include name="apache.shared.template.conf" />
+    <include name="wkhtmltoimage.css" />
+    <include name="sql/mysql/zyndax.mysql" />
+  </fileset>
+
+  <!-- public folder source files -->
+  <fileset id="public-sources" dir="${project.basedir}/public">
+    <include name=".htaccess" />
+    <include name="favicon.ico" />
+    <include name="index.php" />
+    <include name="robots.txt" />
+    <include name="css/sprites.png" />
+    <include name="css/zyndax.css" />
+    <include name="images/**" />
+    <include name="js/libs/ckeditor/**" />
+    <include name="js/libs/modernizr-*.js" />
+    <include name="js/libs/selectivizr.min.js" />
+    <include name="js/zyndax.js" />
+    <include name="theme/*/style.css" />
+    <include name="theme/*/images/**" />
+  </fileset>
+
+  <!-- Clean the directory for the next build -->
+  <target name="clean" description="Clean build folder in preparation of new build.">
+    <available file="${project.builddir}/build.properties" property="build_properties_exist" value="true" />
+    <fail unless="build_properties_exist" message="The build.properties file is missing." />
+    <delete dir="${project.builddir}/logs" includeemptydirs="true" />
+    <delete dir="${project.builddir}/zyndax" includeemptydirs="true" />
+  </target>
+
+  <!-- Prepare the new build directories after cleaning -->
+  <target name="prepare" depends="clean" description="Prepare build folder for new build.">
+    <mkdir dir="${project.builddir}/logs" />
+    <mkdir dir="${project.distdir}" />
+  </target>
+
+  <!-- Cache bust CSS and JS files -->
+  <target name="cachebust" description="Insert date into filenames of css and js files for cache-busting">
+    <foreach param="filename" absparam="absfilename" target="cachebustfile">
+      <fileset refid="css-cachebusters" />
+      <fileset refid="js-cachebusters" />
+    </foreach>
+  </target>
+
+  <!-- Cache bust a single file -->
+  <target name="cachebustfile">
+    <exec command="sed -i 's/.YYYYMMDD.\(css\|js\)/.${TSTAMP}.\1/' ${absfilename}" passthru="true" />
+  </target>
+
+  <!-- Build Zyndax package, preparing it for distribution -->
+  <target name="build" depends="prepare,css,js" description="Build application for distribution">
+    <exec command="grep &quot;VERSION = '${version}&quot; ${project.basedir}/library/Rexmac/Zyndax/Version/Version.php" checkreturn="true" />
+    <copy todir="${project.builddir}/zyndax/">
+      <fileset refid="docs" />
+    </copy>
+    <copy todir="${project.builddir}/zyndax/bin">
+      <fileset refid="bin-scripts" />
+    </copy>
+    <copy todir="${project.builddir}/zyndax/application">
+      <fileset refid="application-sources" />
+    </copy>
+    <copy todir="${project.builddir}/zyndax/data">
+      <fileset refid="data-sources" />
+    </copy>
+    <copy todir="${project.builddir}/zyndax/library">
+      <fileset refid="library-sources" />
+    </copy>
+    <copy todir="${project.builddir}/zyndax/public">
+      <fileset refid="public-sources" />
+    </copy>
+    <exec command="sed -i &quot;s/VERSION = '${version}-DEV/VERSION = '${version}/&quot; ${project.builddir}/zyndax/library/Rexmac/Zyndax/Version/Version.php" passthru="true" />
+    <phingcall target="cachebust" />
+    <exec command="${project.builddir}/zyndax/bin/composer install -d ${project.builddir}/zyndax" passthru="true" />
+  </target>
+
+  <!-- Create a git tag with the current version number-->
+  <target name="git-tag" description="Tag for release">
+    <exec command="grep &quot;VERSION = '${version}-DEV&quot; ${project.basedir}/library/Rexmac/Zyndax/Version/Version.php" checkreturn="true" />
+    <exec command="git checkout master" passthru="true" />
+    <exec command="git merge --no-ff develop" passthru="true" />
+    <exec command="git shortlog | grep -E '^[ ]+\w+' | wc -l" outputProperty="build" />
+    <exec command="sed -i &quot;s/VERSION = '${version}-DEV/VERSION = '${version}/&quot; ${project.basedir}/library/Rexmac/Zyndax/Version/Version.php" passthru="true" />
+    <exec command="sed -i &quot;s/BUILD = [0-9]\+/BUILD = ${build}/&quot; ${project.basedir}/library/Rexmac/Zyndax/Version/Version.php" passthru="true" />
+    <exec command="git add ${project.basedir}/library/Rexmac/Zyndax/Version/Version.php" passthru="true" />
+    <exec command="git commit -m 'Release ${version}'" passthru="true" />
+    <exec command="git tag -a -m 'Tag ${version}' ${version}" passthru="true" />
+    <exec command="git push --tags" passthru="true" />
+    <exec command="git checkout develop" passthru="true" />
+    <exec command="git merge --no-ff master" passthru="true" />
+  </target>
+
+  <!-- Create release tarballs for distribution -->
+  <target name="dist" depends="build" description="Create tarball for distribution.">
+    <delete file="${project.distdir}/Zyndax-${version}-minimal.tar.gz" />
+    <delete file="${project.distdir}/Zyndax-${version}-full.tar.gz" />
+    <delete file="${project.distdir}/Zyndax-${version}-source.tar.gz" />
+    <tar destfile="${project.distdir}/Zyndax-${version}-minimal.tar.gz" compression="gzip" basedir="${project.builddir}">
+      <fileset dir="${project.builddir}">
+        <include name="zyndax/**" />
+        <exclude name="zyndax/vendor/**" />
+      </fileset>
+    </tar>
+    <tar destfile="${project.distdir}/Zyndax-${version}-full.tar.gz" compression="gzip" basedir="${project.builddir}">
+      <fileset dir="${project.builddir}">
+        <include name="zyndax/**" />
+      </fileset>
+    </tar>
+    <echo msg="Building source tar: ${project.distdir}/Zyndax-${version}-source.tar.gz" />
+    <exec command="git archive --format=tgz --prefix=Zyndax-${version}-source/ master >${project.distdir}/Zyndax-${version}-source.tar.gz" passthru="true" />
+  </target>
+
+  <!-- Update the version number -->
+  <target name="update-dev-version" description="Update version string.">
+    <propertyprompt propertyName="next_version" defaultValue="${version}" promptText="Enter next version string (without -DEV)" />
+    <!-- <propertyprompt propertyName="confirm" defaultValue="n" promptText="Are you sure? (y/n)" /> -->
+    <input propertyName="confirm" defaultValue="n" message="Are you sure? " validArgs="y,n" />
+    <if><equals arg1="${confirm}" arg2="y" />
+      <then>
+        <exec command="git checkout develop" passthru="true" />
+        <exec command="git merge --no-ff master" passthru="true" />
+        <exec command="sed -i &quot;s/VERSION = '${version}\(-DEV\)\?/VERSION = '${next_version}-DEV/&quot; ${project.basedir}/library/Rexmac/Zyndax/Version/Version.php" passthru="true" />
+        <exec command="git add ${project.basedir}/library/Rexmac/Zyndax/Version/Version.php" passthru="true" />
+        <exec command="git commit -m 'Bump dev version to ${next_version}-DEV'" passthru="true" />
+        <exec command="git push" passthru="true" />
+      </then>
+      <else>
+        <property name="fail.update-dev-version" value="1" />
+        <echo msg="You have failed to enter a version number." />
+      </else>
+    </if>
+  </target>
+
+  <!-- Prepare finished build for release -->
+  <target name="release" depends="git-tag,dist,update-dev-version" description="Prepare finished build for release.">
+    <if><equals arg1="${fail.update-dev-version}" arg2="1" />
+      <then>
+        <echo msg="WARNING! Do not re-run 'phing release'!" />
+        <echo msg="Please run 'phing update-dev-version' and enter a version number before any commits are made." />
+      </then>
+    </if>
+  </target>
+
+  <!-- Build and deploy finished build to production -->
+  <target name="deploy" description="Build and deploy to production.">
+    <exec command="git checkout master" passthru="true" />
+    <phingcall target="build" />
+    <exec command="sudo ${deploy.ssh_cmd} ${deploy.host} &quot;sed -n 's/.\+VERSION = '\''\([0-9]\+\.[0-9]\+\.[0-9]\+\).\+/\1/p' ${deploy.path}/library/Rexmac/Zyndax/Version/Version.php&quot;" outputProperty="remoteVersion" />
+    <exec command="sudo rsync --log-format '%n%L' -nczrlD --exclude='/vendor/' -e '${deploy.ssh_cmd}' ${project.builddir}/zyndax/ ${deploy.host}:${deploy.path}/" passthru="true" />
+    <input propertyName="confirm" defaultValue="n" message="The above files will be deployed to production. The existing installation will be backed up at ${deploy.path}-${remoteVersion}. Are you sure you want to continue? " validArgs="y,n" />
+    <if><equals arg1="${confirm}" arg2="y" />
+      <then>
+        <exec command="sudo ${deploy.ssh_cmd} ${deploy.host} &quot;cp -r ${deploy.path} ${deploy.path}-${remoteVersion}&quot;" />
+        <exec command="sudo rsync -cvzrlD --exclude='/vendor/' -e '${deploy.ssh_cmd}' ${project.builddir}/zyndax/ ${deploy.host}:${deploy.path}/" />
+      </then>
+      <else>
+        <echo msg="Deployment cancelled." />
+      </else>
+    </if>
+    <exec command="git checkout develop" passthru="true" />
+  </target>
+
+  <!-- Deploy most recent build to production -->
+  <target name="deploy-latest" description="Deploy most recent build to production.">
+    <exec command="sudo ${deploy.ssh_cmd} ${deploy.host} &quot;sed -n 's/.\+VERSION = '\''\([0-9]\+\.[0-9]\+\.[0-9]\+\).\+/\1/p' ${deploy.path}/library/Rexmac/Zyndax/Version/Version.php&quot;" outputProperty="remoteVersion" />
+    <exec command="sudo rsync --log-format '%n%L' -nczrlD --exclude='/vendor/' -e '${deploy.ssh_cmd}' ${project.builddir}/zyndax/ ${deploy.host}:${deploy.path}/" passthru="true" />
+    <input propertyName="confirm" defaultValue="n" message="The above files will be deployed to production. The existing installation will be backed up at ${deploy.path}-${remoteVersion}. Are you sure you want to continue? " validArgs="y,n" />
+    <if><equals arg1="${confirm}" arg2="y" />
+      <then>
+        <exec command="sudo ${deploy.ssh_cmd} ${deploy.host} &quot;cp -r ${deploy.path} ${deploy.path}-${remoteVersion}&quot;" />
+        <exec command="sudo rsync -cvzrlD --exclude='/vendor/' -e '${deploy.ssh_cmd}' ${project.builddir}/zyndax/ ${deploy.host}:${deploy.path}/" />
+      </then>
+      <else>
+        <echo msg="Deployment cancelled." />
+      </else>
+    </if>
+  </target>
+
+  <!-- PHPUnit -->
+  <target name="test" description="Run tests.">
+    <if><equals arg1="${test.phpunit_generate_coverage}" arg2="1" />
+      <then>
+        <exec command="cd ${project.basedir}/tests; ${project.vendordir}/bin/phpunit -d zend.enable_gc=0 -c phpunit.dev.xml --stderr" escape="false" checkreturn="true" passthru="true" />
+      </then>
+      <else>
+        <exec command="cd ${project.basedir}/tests; ${project.vendordir}/bin/phpunit -d zend.enable_gc=0 --stderr" escape="false" checkreturn="true" passthru="true" />
+      </else>
+    </if>
+  </target>
+
+  <!-- Target used by Jenkins CI -->
+  <target name="jenkins" description="Special target for use by Jenkins CI">
+    <phingcall target="prepare" />
+    <phingcall target="test">
+      <property name="test.phpunit_generate_coverage" value="1" />
+    </phingcall>
+    <phingcall target="pdepend" />
+    <phingcall target="phpmd" />
+    <phingcall target="phpcb" />
+    <phingcall target="phpcpd" />
+    <phingcall target="phpcs" />
+    <phingcall target="phploc" />
+    <phingcall target="docs" />
+  </target>
+
+  <!-- PHP CodeBrowser -->
+  <target name="phpcb" description="Run PHP CodeBrowser">
+    <exec command="phpcb -l ${project.builddir}/logs -s application -s library/Rexmac -s -o ${project.builddir}/code-browser -i application/proxies" escape="false" />
+  </target>
+
+  <!-- PHP Copy/Paste Detector -->
+  <target name="phpcpd" description="Run PHP Copy/Paste Detector">
+    <phpcpd>
+      <fileset dir="${project.basedir}">
+        <include name="application/**" />
+        <include name="library/Rexmac/**" />
+        <exclude name="application/forms/**" />
+        <exclude name="application/modules/admin/forms/**" />
+        <exclude name="**.js" />
+      </fileset>
+      <formatter type="pmd" outfile="${project.builddir}/logs/pmd-cpd.xml" />
+    </phpcpd>
+  </target>
+
+  <!-- PHP_CodeSniffer - Check syntax and coding standards -->
+  <target name="phpcs" description="Run PHP Codesniffer">
+    <phpcodesniffer standard="Zyndax">
+      <fileset dir="${project.basedir}">
+        <include name="application/**" />
+        <include name="library/Rexmac/**" />
+        <exclude name="**/*.ini" />
+        <exclude name="**/*.js" />
+        <exclude name="**/*.phtml" />
+      </fileset>
+      <formatter type="checkstyle" outfile="${project.builddir}/logs/checkstyle-phpcs.xml" />
+    </phpcodesniffer>
+  </target>
+
+  <!-- PHP_Depend -->
+  <target name="pdepend" description="Run PHP Depend">
+    <phpdepend>
+      <fileset dir="${project.basedir}">
+        <include name="application/**" />
+        <include name="library/Rexmac/**" />
+        <patternset>
+          <include name="**/*.php" />
+        </patternset>
+      </fileset>
+      <logger type="jdepend-xml" outfile="${project.builddir}/logs/jdepend.xml" />
+      <logger type="jdepend-chart" outfile="${project.builddir}/logs/dependencies.svg" />
+      <logger type="overview-pyramid" outfile="${project.builddir}/logs/overview-pyramid.svg" />
+    </phpdepend>
+  </target>
+
+  <!-- PhpDocumentor2 - Generate API docs -->
+  <target name="docs" description="Generate documentation">
+    <delete dir="${project.docsdir}/api" includeemptydirs="true" />
+    <exec command="${project.vendordir}/bin/phpdoc.php -c ${project.datadir}/phpdoc/phpdoc.dist.xml" passthru="true" />
+  </target>
+
+  <!-- PHPloc -->
+  <target name="phploc" description="Run PHPloc (lines of code)">
+    <exec command="phploc --log-csv ${project.builddir}/logs/phploc.csv library/Rexmac application --exclude application/proxies" escape="false" />
+  </target>
+
+  <!-- PHP Mess Detector -->
+  <target name="phpmd" description="Run PHP Mess Detector">
+    <phpmd rulesets="zyndax-codesize,zyndax-design,zyndax-naming,unusedcode">
+      <fileset dir="${project.basedir}">
+        <include name="application/**" />
+        <include name="library/Rexmac/**" />
+        <exclude name="application/proxies/**" />
+        <exclude name="application/forms/**" />
+        <exclude name="application/modules/admin/forms/**" />
+      </fileset>
+      <formatter type="xml" outfile="${project.builddir}/logs/pmd.xml" />
+    </phpmd>
+  </target>
+
+  <!-- jshint -->
+  <target name="jshint" description="Run jsHint">
+    <jshint haltonfailure="true">
+      <fileset dir="./application">
+        <include name="**/*.js" />
+      </fileset>
+      <fileset dir="./public/js/libs">
+        <include name="static.js" />
+      </fileset>
+    </jshint>
+  </target>
+
+  <target name="cssmin">
+    <cssMin targetDir="./public/css/min" suffix="" failOnError="true">
+      <filelist refid="css-sources" />
+    </cssMin>
+    <!-- <cssMin targetDir="./public/theme" suffix="" failOnError="true">
+      <fileset dir="./public/theme">
+        <include name="**/*.less" />
+      </fileset>
+    </cssMin> -->
+  </target>
+
+  <target name="css" depends="cssmin" description="Minify and concatenate CSS">
+    <property name="css.src" value="./public/css/zyndax.css" />
+    <exec command="rm ./public/css/zyndax.css" passthru="true" />
+    <append destFile="${css.src}">
+      <filelist refid="css-minified-sources" />
+    </append>
+  </target>
+
+  <target name="jsmin">
+    <!-- <jsMin targetDir="./public/js/libs/min" minifier="gcc" suffix=".min" failOnError="true"> -->
+    <jsMin targetDir="./public/js/libs/min" minifier="gcc" suffix="" failOnError="true">
+      <filelist refid="js-sources" />
+    </jsMin>
+  </target>
+
+  <target name="js" depends="jsmin" description="Minify and concatenate JS">
+    <property name="js.src" value="./public/js/zyndax.js" />
+    <exec command="rm ./public/js/zyndax.js" passthru="true" />
+    <append destFile="${js.src}">
+      <filelist refid="js-minified-sources" />
+    </append>
+  </target>
+
+</project>

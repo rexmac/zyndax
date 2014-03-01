@@ -1,0 +1,5 @@
+<h3>Welcome to the <?php echo $this->escape(\Zend_Registry::get('siteName')); ?> Administration Panel</h3>
+<p>Please select a task from the list below:</p>
+<ul>
+  <li><a href="<?php echo $this->url(array(), 'adminUsers') ?>" title="Link to user management panel" class="ss_sprite ss_user">Manage users</a></li>
+</ul>

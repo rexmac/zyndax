@@ -1,17 +1,33 @@
-<phpunit bootstrap="./bootstrap.php">
-    <testsuite name="Application Test Suite">
-        <directory>./application</directory>
+<phpunit bootstrap="./bootstrap.php" colors="true" processIsolation="false">
+  <php>
+    <includePath>.</includePath>
+  </php>
+
+  <testsuites>
+    <testsuite name="Library">
+      <directory suffix=".php">./library</directory>
     </testsuite>
-    <testsuite name="Library Test Suite">
-        <directory>./library</directory>
+    <testsuite name="App">
+      <directory suffix=".php">./application</directory>
     </testsuite>
-    
-    <filter>
-        <!-- If Zend Framework is inside your project's library, uncomment this filter -->
-        <!-- 
-        <whitelist>
-            <directory suffix=".php">../../library/Zend</directory>
-        </whitelist>
-        -->
-    </filter>
+  </testsuites>
+
+  <filter>
+    <whitelist>
+      <directory suffix=".php">../library/Rexmac/</directory>
+      <directory suffix=".php">../application/controllers/</directory>
+      <directory suffix=".php">../application/modules/admin/controllers/</directory>
+      <exclude>
+        <directory suffix=".php">../library/Rexmac/Zyndax/Test/</directory>
+      </exclude>
+    </whitelist>
+  </filter>
+
+  <logging>
+    <!-- <log type="coverage-html" target="../build/coverage" title="Zyndax" charset="UTF-8" yui="true" highlight="true" lowUpperBound="35" highLowerBound="80" /> -->
+    <!-- <log type="testdox-html" target="build/logs/testdox.html" /> -->
+    <!-- <log type="coverage-clover" target="../build/coverage/clover.xml" /> -->
+    <log type="junit" target="../build/logs/phpunit.xml" logIncompleteSkipped="false" />
+  </logging>
+
 </phpunit>

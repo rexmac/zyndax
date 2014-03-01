@@ -1,0 +1,15 @@
+<?php echo '<?xml version="1.0" encoding="UTF-8"?>'; ?>
+<<?php echo $this->xmlWrapperTag; ?> status="fail">
+  <errors>
+    <error>
+      <message><?php echo $this->message ?></message>
+<?php if(isset($this->exception)): ?>
+      <exception>
+        <message><?php echo $this->exception->getMessage() ?></message>
+        <stackTrace><?php echo $this->exception->getTraceAsString() ?></stackTrace>
+        <requestParams><?php echo var_export($this->request->getParams(), true) ?></requestParams>
+      </exception>
+<?php endif ?>
+    </error>
+  </errors>
+</<?php echo $this->xmlWrapperTag; ?>>

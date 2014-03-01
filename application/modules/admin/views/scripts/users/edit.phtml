@@ -1,0 +1,25 @@
+<?php echo $this->form; ?>
+
+<h2>Edit History</h2>
+<table id="editHistory">
+  <thead><tr>
+    <th>Date</th>
+    <th>User</th>
+    <th>IP</th>
+    <th>Description</th>
+  </tr></thead>
+  <tbody>
+<?php if(count($this->editHistory) > 0): ?>
+<?php foreach($this->editHistory as $event): ?>
+    <tr>
+      <td><?php echo $event->getDate()->setTimeZone($this->timeZone)->format('Y-m-d H:i:s T') ?></td>
+      <td class="align-content-center"><?php echo $event->getUser()->getUsername() ?></td>
+      <td class="align-content-center"><?php echo $event->getIp() ?></td>
+      <td><?php echo str_replace(PHP_EOL, '<br />', $event->getDescription()) ?></td>
+    </tr>
+<?php endforeach ?>
+<?php else: ?>
+    <tr class="empty-table"><td colspan="4">No history of prior edits</td></tr>
+<?php endif ?>
+  </tbody>
+</table>

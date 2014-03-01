@@ -1,0 +1,29 @@
+<?php echo $this->form ?>
+
+<table id="users">
+  <thead><tr>
+    <th class="hidden">Status</th>
+    <th>Username</th>
+    <th>Email</th>
+    <th>Role</th>
+    <th>Created</th>
+    <th>Last Connection</th>
+    <th>Actions</th>
+  </tr></thead>
+  <tbody>
+<?php foreach($this->users as $user):
+  $status = ($user->getLocked() ? 'locked' : '') . ' ' . ($user->getActive() ? 'active' : 'new');
+?>
+    <tr id="user-<?php echo $user->getId(); ?>" class="<?php echo $status; ?>">
+      <td class="hidden"><?php echo $status; ?></td>
+      <td><?php echo $this->userEditLink($user); ?></td>
+      <td><?php echo '<a href="mailto:' . $user->getEmail() . '">' . $this->escape($user->getEmail()) . '</a>'; ?></td>
+      <td><?php echo $this->escape($user->getRole()->getName()) ?></td>
+      <td><?php echo $this->escape($user->getDateCreated()->setTimeZone($this->timeZone)->format('Y-m-d H:i:s')) ?></td>
+      <td><?php echo $user->getLastConnect() !== null ? $this->escape($user->getLastConnect()->format('Y-m-d H:i:s')) : '&ndash;' ?></td>
+      <td class="actions smaller align-content-center"><?php echo $this->userActivateLink($user); ?><?php if($user->getRole()->getName() !== 'Administrator') { echo $this->userLockLink($user); } ?></td>
+    </tr>
+<?php endforeach ?>
+  </tbody>
+  <tfoot></tfoot>
+</table>

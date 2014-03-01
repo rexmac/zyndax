@@ -1,30 +1,48 @@
 <?php
 
-class IndexControllerTest extends Zend_Test_PHPUnit_ControllerTestCase
-{
+class IndexControllerTest extends \Rexmac\Zyndax\Test\PHPUnit\ControllerTestCase {
 
-    public function setUp()
-    {
-        $this->bootstrap = new Zend_Application(APPLICATION_ENV, APPLICATION_PATH . '/configs/application.ini');
-        parent::setUp();
-    }
+  public static function setUpBeforeClass() {
+    parent::$withData = true;
+    parent::setUpBeforeClass();
+  }
 
-    public function testIndexAction()
-    {
-        $params = array('action' => 'index', 'controller' => 'Index', 'module' => 'default');
-        $urlParams = $this->urlizeOptions($params);
-        $url = $this->url($urlParams);
-        $this->dispatch($url);
-        
-        // assertions
-        $this->assertModule($urlParams['module']);
-        $this->assertController($urlParams['controller']);
-        $this->assertAction($urlParams['action']);
-        $this->assertQueryContentContains("div#welcome h3", "This is your project's main page");
-    }
+  public function setUp() {
+    parent::setUp();
+  }
 
+  public function tearDown() {
+    parent::tearDown();
+  }
 
+  public function testIndexAction() {
+    $this->dispatch('/');
+    $this->assertModule('default');
+    $this->assertController('index');
+    $this->assertAction('index');
+    $this->assertRedirectTo('/user/login', 'Failed to redirect to login');
+  }
+
+/*
+  public function testIndexActionAsAdmin() {
+    \Zend_Registry::set('siteDomain', 'example.com');
+    $this->assertFalse(\Zend_Auth::getInstance()->hasIdentity());
+    $this->_loginAdmin();
+    $this->assertRedirectRegex('/^http:\/\/admin\.example\.com\/user\/login\?auth=[0-9a-f]{128}$/', 'Failed to redirect admin user upon login');
+    $redirectUrl = str_replace('http://admin.example.com', '', $this->getRedirectUrl());
+    $this->redispatch($redirectUrl);
+    $this->assertTrue(\Zend_Auth::getInstance()->hasIdentity());
+
+    $session = new Zend_Session_Namespace('VPMVMA');
+    $session->loggedInAsUser = '2';
+
+    #$this->redispatch('/', false);
+    $this->redispatch('/');
+error_log($this->getResponse()->getBody());
+error_log($this->getRedirectUrl());
+    $this->assertModule('default');
+    $this->assertController('index');
+    $this->assertAction('home');
+  }
+*/
 }
-
-
-

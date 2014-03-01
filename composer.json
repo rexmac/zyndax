@@ -1,0 +1,26 @@
+{
+  "name": "rexmac/zyndax",
+  "description": "Application framework for Zend Framework 1.12.x applications",
+  "license": "BSD-3-Clause",
+  "authors": [{
+    "name": "Rex McConnell",
+    "email": "rex@rexmac.com",
+    "homepage": "http://rexmac.com",
+    "role": "Developer"
+  }],
+  "support": {
+    "issues": "https://github.com/rexmac/zyndax/issues",
+    "source": "https://github.com/rexmac/zyndax"
+  },
+  "require": {
+    "php": ">=5.3.3",
+    "doctrine/orm": "2.2.2",
+    "zendframework/zendframework1": "1.12.3"
+  },
+  "require-dev": {
+    "mockery/mockery": "0.7.*",
+    "phpdocumentor/phpdocumentor": "2.0.*",
+    "phpunit/phpunit": "3.7.*",
+    "phing/phing": "dev-master"
+  }
+}

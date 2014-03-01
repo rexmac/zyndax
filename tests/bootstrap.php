@@ -1,18 +1,32 @@
 <?php
 
-// Define path to application directory
-defined('APPLICATION_PATH')
-    || define('APPLICATION_PATH', realpath(dirname(__FILE__) . '/../application'));
+ini_set('date.timezone', 'UTC');
 
-// Define application environment
-defined('APPLICATION_ENV')
-    || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'testing'));
+error_reporting(E_ALL ^ E_NOTICE);
+
+define('APPLICATION_PATH', realpath(__DIR__ . '/../application'));
+define('APPLICATION_ENV', 'testing');
+define('LIBRARY_PATH', realpath(__DIR__ . '/../library'));
+define('VENDOR_PATH', realpath(__DIR__ . '/../vendor'));
+define('TEST_PATH', realpath(__DIR__));
 
 // Ensure library/ is on include_path
 set_include_path(implode(PATH_SEPARATOR, array(
-    realpath(APPLICATION_PATH . '/../library'),
-    get_include_path(),
-)));
+  LIBRARY_PATH,
+  TEST_PATH.'/library',
+  VENDOR_PATH.'/zendframework/zendframework1/library',
+  get_include_path()))
+);
+define('ORIG_INCLUDE_PATH', get_include_path());
 
-require_once 'Zend/Loader/Autoloader.php';
-Zend_Loader_Autoloader::getInstance();
+register_shutdown_function(function() {
+  @unlink('/tmp/log');
+});
+
+// Utility functions
+require_once(APPLICATION_PATH . '/../library/Rexmac/Zyndax/functions.php');
+
+// Autoloader
+$composerAutoloader = require VENDOR_PATH . '/autoload.php';
+$composerAutoloader->addClassMap(require_once APPLICATION_PATH . '/autoload_classmap.php');
+$composerAutoloader->setUseIncludePath(true);

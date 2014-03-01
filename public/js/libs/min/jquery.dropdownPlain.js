@@ -1,0 +1,1 @@
+(function(a){a("ul.dropdown li").hover(function(){a(this).addClass("hover");a("ul:first",this).css("display","block")},function(){a(this).removeClass("hover");a("ul:first",this).css("display","none")})})(jQuery);
